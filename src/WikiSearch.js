@@ -1,40 +1,52 @@
 import React from 'react';
-import styled from 'styled-components'
-import ReactPaginate from 'react-paginate';
+import { Table } from "antd"
 
+const columns = [
+    {
+        title: "Page ID",
+        dataIndex: "queryResultPageID",
+        key: "queryResultPageID",
+        sorter: (a, b) => a.queryResultPageID - b.queryResultPageID,
+    },
+    {
+        title: "Title",
+        dataIndex: "queryResultPageTitle",
+        link: "queryResultPageFullUrl",
+        key: "queryResultPageTitle",
+        render: text => {
 
-const Styles = styled.div`
-  padding: 1rem;
+            //let link = link.queryResultPageFullUrl;
 
-  table {
-    border-spacing: 0;
-    border: 1px solid black;
+            return (<a href={`https://en.wikipedia.org/wiki/${text}`}>{text}</a>);
 
-    tr {
-      :last-child {
-        td {
-          border-bottom: 0;
+        },
+
+    },
+    {
+        title: "Snippet",
+        dataIndex: "queryResultPageSnippet",
+        key: "queryResultPageSnippet",
+        render: text => {
+            //let text1 = <p className="description" dangerouslySetInnerHTML={{ __html: text }}></p>
+            // <Typography.Text copyable>{text}</Typography.Text>
+            return (<p className="description" dangerouslySetInnerHTML={{ __html: text }}></p>);
         }
-      }
+        //render: text => <Typography.Text copyable>{text}</Typography.Text>
+
+
+    },
+    {
+        title: "Timestamp (yyyy/mm/dd time UTC)",
+        dataIndex: "queryResultPageTimestamp",
+        key: "queryResultPageTimestamp",
+        render: text => {
+            text = text.substring(0, text.length - 1)
+            text = text.replace(/T/g, ' ');
+            return (text);
+        },
+        //sorter: (a, b) => a.text - b.text,
     }
-
-    th,
-    td {
-      margin: 0;
-      padding: 0.5rem;
-      border-bottom: 1px solid black;
-      border-right: 1px solid black;
-
-      :last-child {
-        border-right: 0;
-      }
-    }
-  }
-
-  .pagination {
-    padding: 0.5rem;
-  }
-`
+]
 
 class WikiSearch extends React.Component {
     constructor(props) {
@@ -43,12 +55,23 @@ class WikiSearch extends React.Component {
             wikiSearchReturnValues: [],
             WikiSearchTerms: '',
             currentPage: 1,
-            todosPerPage: 10
+            todosPerPage: 10,
+            CountOfResults: 20
         }
-        this.handleClick = this.handleClick.bind(this);
     }
 
     useWikiSearchEngine = (e) => {
+
+        if (this.state.WikiSearchTerms === '') {
+            alert("Чел ты 💀")
+            return false;
+        }
+
+        if (this.state.CountOfResults === '' || typeof this.state.CountOfResults !== "number") {
+            alert("Чел ты 👊")
+            return false;
+        }
+
         e.preventDefault();
 
         this.setState({
@@ -56,7 +79,7 @@ class WikiSearch extends React.Component {
         });
 
         const pointerToThis = this;
-        console.log(this);
+        //console.log(this);
 
         var url = "https://en.wikipedia.org/w/api.php";
 
@@ -65,14 +88,14 @@ class WikiSearch extends React.Component {
             list: 'search',
             srsearch: this.state.WikiSearchTerms,
             format: 'json',
-            srlimit: 20
+            srlimit: this.state.CountOfResults
         };
 
         url = url + '?origin=*';
         Object.keys(params).forEach((key) => {
             url += "&" + key + "=" + params[key];
         });
-        console.log(url, "start")
+
 
         fetch(url)
             .then(
@@ -82,7 +105,6 @@ class WikiSearch extends React.Component {
             )
             .then(
                 function (response) {
-                    console.log(response);
                     //console.log(response.query.search[0].pageid);
                     for (var key in response.query.search) {
                         pointerToThis.state.wikiSearchReturnValues.push({
@@ -113,6 +135,7 @@ class WikiSearch extends React.Component {
                             )
                             .then(
                                 function (response) {
+                                    //console.log(response, "response");
                                     page.queryResultPageFullUrl = response.query.pages[pageID].fullurl;
                                     //console.log(page.queryResultPageFullUrl, "full url")
 
@@ -130,100 +153,50 @@ class WikiSearch extends React.Component {
         this.setState({
             WikiSearchTerms: e.target.value
         })
-
-
     }
 
-    handleClick(event) {
+    changecountSearchTerms = (e) => {
+
         this.setState({
-            currentPage: Number(event.target.id)
-        });
+            CountOfResults: e.target.value
+        })
+
     }
+
 
     render() {
         let wikiSearchResults = [];
 
-        const { wikiSearchReturnValues, currentPage, todosPerPage } = this.state;
-
-        // Logic for displaying todos
-        const indexOfLastTodo = currentPage * todosPerPage;
-        const indexOfFirstTodo = indexOfLastTodo - todosPerPage;
-        const currentTodos = wikiSearchReturnValues.slice(indexOfFirstTodo, indexOfLastTodo);
-        //console.log(currentTodos, "currTodo")
-
-        // Logic for displaying page numbers
-        const pageNumbers = [];
-        for (let i = 1; i <= Math.ceil(wikiSearchReturnValues.length / todosPerPage); i++) {
-            pageNumbers.push(i);
-        }
-
-        const renderPageNumbers = pageNumbers.map(number => {
-            return (
-
-                <li
-                    key={number}
-                    id={number}
-                    onClick={this.handleClick}
-                >
-                    {number}
-                </li>
-            );
-        });
-
-
         if (this.state.wikiSearchReturnValues.length !== 0) {
+            console.log(this.state.wikiSearchReturnValues, "last array")
             wikiSearchResults.push(
                 <div className="searchResultDiv">
-                    <Styles>
-                        <table border="2">
-                            <thead>
-                                <th>Page ID</th>
-                                <th>Title</th>
-                                <th>Snippet</th>
-                                <th>Timestamp</th>
-
-                            </thead>
-                            <tbody>
-                                {
-                                    currentTodos.map((tdata, i) => (
-                                        <tr>
-                                            <td>{tdata.queryResultPageID}</td>
-                                            <td>{<h3><a href={tdata.queryResultPageFullUrl}>{tdata.queryResultPageTitle}</a></h3>}</td>
-                                            <td>{<p className="description" dangerouslySetInnerHTML={{ __html: tdata.queryResultPageSnippet }}></p>}</td>
-                                            <td>{tdata.queryResultPageTimestamp}</td>
-
-                                        </tr>
-
-                                    ))
-                                }
-
-                            </tbody>
-                        </table>
-                    </Styles>
+                    <Table
+                        dataSource={this.state.wikiSearchReturnValues}
+                        columns={columns}
+                        pagination={
+                            {
+                                showSizeChanger: true,
+                                pageSizeOptions: [5, 10, 15, 20]
+                            }
+                        } />
                 </div>
 
             )
         }
-        console.log(this.state.wikiSearchReturnValues, "Резы")
-
-        // if (this.state.WikiSearchTerms === '') {
-
-        //     alert("Чел, ты введи что-то")
-
-        // }
+        //console.log(this.state.wikiSearchReturnValues, "Резы")
 
         return (
             <div className="App">
                 <h1>Search from wikipedia</h1>
                 <form action="">
                     <input type="text" value={this.state.WikiSearchTerms} onChange={this.changeWikiSearchTerms} placeholder='Search something' />
+                    <input type="text" value={this.state.CountOfResults} onChange={this.changecountSearchTerms} placeholder='Count of pages' />
                     <button type='submit' onClick={this.useWikiSearchEngine}>Search</button>
                 </form>
 
+
                 {wikiSearchResults}
-                <ul>
-                    {renderPageNumbers}
-                </ul>
             </div>
 
         );
