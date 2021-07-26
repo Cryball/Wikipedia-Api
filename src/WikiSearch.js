@@ -27,8 +27,6 @@ const columns = [
         dataIndex: "queryResultPageSnippet",
         key: "queryResultPageSnippet",
         render: text => {
-            //let text1 = <p className="description" dangerouslySetInnerHTML={{ __html: text }}></p>
-            // <Typography.Text copyable>{text}</Typography.Text>
             return (<p className="description" dangerouslySetInnerHTML={{ __html: text }}></p>);
         }
         //render: text => <Typography.Text copyable>{text}</Typography.Text>
@@ -48,6 +46,8 @@ const columns = [
     }
 ]
 
+//app.use(cors({ origin: 'https://localhost:44346/api/wiki' }))
+
 class WikiSearch extends React.Component {
     constructor(props) {
         super(props);
@@ -63,12 +63,12 @@ class WikiSearch extends React.Component {
     useWikiSearchEngine = (e) => {
 
         if (this.state.WikiSearchTerms === '') {
-            alert("Чел ты 💀")
+            alert("Чел ты оставил пустой поисковый запрос 💀")
             return false;
         }
 
-        if (this.state.CountOfResults === '' || typeof this.state.CountOfResults !== "number") {
-            alert("Чел ты 👊")
+        if (isNaN(this.state.CountOfResults) || this.state.CountOfResults === '') {
+            alert("Чел ты не число ввел 👊")
             return false;
         }
 
@@ -79,7 +79,7 @@ class WikiSearch extends React.Component {
         });
 
         const pointerToThis = this;
-        //console.log(this);
+        console.log(this, "first json");
 
         var url = "https://en.wikipedia.org/w/api.php";
 
@@ -95,6 +95,7 @@ class WikiSearch extends React.Component {
         Object.keys(params).forEach((key) => {
             url += "&" + key + "=" + params[key];
         });
+        console.log(url, "link")
 
 
         fetch(url)
@@ -103,6 +104,19 @@ class WikiSearch extends React.Component {
                     return response.json();
                 }
             )
+            // .then(
+            //     function (response) {
+            //         console.log((response.query.search), "Что перед PUT")
+            //         fetch("https://localhost:44346/api/wiki", {
+            //             method: 'PUT',
+            //             headers: {
+            //                 'Accept': 'application/json',
+            //                 'Content-Type': 'application/json'
+            //             },
+            //             body: response.query.search
+            //         })
+            //     }
+            // )
             .then(
                 function (response) {
                     //console.log(response.query.search[0].pageid);
@@ -143,9 +157,9 @@ class WikiSearch extends React.Component {
                                 }
                             )
                     }
-
                 }
             )
+
     }
 
     changeWikiSearchTerms = (e) => {
